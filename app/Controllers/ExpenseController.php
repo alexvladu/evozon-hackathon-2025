@@ -58,7 +58,7 @@ class ExpenseController extends BaseController
             $userId=$_SESSION['user_id'];
             $date = new \DateTimeImmutable($request->getParsedBody()['date']);
             $category = $request->getParsedBody()['category'];
-            $amount = (float) $request->getParsedBody()['amount'];
+            $amount = (float) $request->getParsedBody()['amount']*100;
             $description = $request->getParsedBody()['description'];
             $this->expenseService->create($userId, $date, $category, $amount, $description);
         }
@@ -89,15 +89,15 @@ class ExpenseController extends BaseController
         try {
             $expenseId = (int)$routeParams['id'];
             $expense = $this->expenseService->find($expenseId);
-            $expenseData = [
+            return $this->render($response, 'expenses/edit.twig', ['expense' => [
                 'id' => $expense->getId(),
                 'userId' => $expense->getUserId(),
-                'date' => $expense->getDate()->format('Y-m-d'), // For SQLite or backend
+                'date' => $expense->getDate()->format('Y-m-d'),
                 'category' => $expense->getCategory(),
                 'amountCents' => $expense->getAmountCents(),
                 'description' => $expense->getDescription(),
-            ];
-            return $this->render($response, 'expenses/edit.twig', ['expense' => $expenseData, 'categories' => $categories]);
+            ],
+            'categories' => $categories]);
         }
         catch (NotFoundException $e){
             return $response->withHeader('Location', '/expenses')->withStatus(404);
@@ -109,8 +109,19 @@ class ExpenseController extends BaseController
 
     public function update(Request $request, Response $response, array $routeParams): Response
     {
-        // TODO: implement this action method to update an existing expense
+        try{
+            $expenseId = (int) $routeParams['id'];
+            $expense = $this->expenseService->find($expenseId);
+            $date = new \DateTimeImmutable($request->getParsedBody()['date']);
+            $category = $request->getParsedBody()['category'];
+            $amount = (float) $request->getParsedBody()['amount']*100;
+            $description = $request->getParsedBody()['description'];
+            $this->expenseService->update($expense, $date, $category, $amount, $description);
+            return $this->index($request, $response);
+        }
+        catch (NotFoundException $e){
 
+        }
         // Hints:
         // - load the expense to be edited by its ID (use route params to get it)
         // - check that the logged-in user is the owner of the edited expense, and fail with 403 if not

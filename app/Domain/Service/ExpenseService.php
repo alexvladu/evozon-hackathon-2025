@@ -8,7 +8,6 @@ use App\Domain\Entity\Expense;
 use App\Domain\Entity\User;
 use App\Domain\Repository\ExpenseRepositoryInterface;
 use App\Exceptions\ValidationException;
-use Cassandra\Exception\UnauthorizedException;
 use DateTimeImmutable;
 use DI\NotFoundException;
 use Psr\Http\Message\UploadedFileInterface;
@@ -72,12 +71,34 @@ class ExpenseService
 
     public function update(
         Expense $expense,
-        float $amount,
-        string $description,
         DateTimeImmutable $date,
         string $category,
+        float $amount,
+        string $description
     ): void {
-        // TODO: implement this to update expense entity, perform validation, and persist
+        $userId=$_SESSION['user_id'];
+        if($userId!=$expense->getUserId())
+            throw new \UnexpectedValueException('You cannot update this expense');
+        $errors=[];
+        if($date>new \DateTimeImmutable('today'))
+            $errors['date']='Date cannot be in the future';
+        if($amount<0)
+            $errors['amount']='Amount cannot be negative';
+        $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
+        $categories = json_decode($categoriesString, true);
+        if(!in_array($category, $categories, true)){
+            $errors['category']='Category is invalid. Choose one of:'.implode(',',$categories);
+        }
+        if(empty($description))
+            $errors['description']='Description cannot be empty';
+        if (!empty($errors)) {
+            throw new ValidationException($errors, 'Update expense failed.');
+        }
+        $expense->setAmountCents((int)$amount);
+        $expense->setDescription($description);
+        $expense->setDate($date);
+        $expense->setCategory($category);
+        $this->expenses->update($expense);
     }
 
     public function delete(Expense $expense): void

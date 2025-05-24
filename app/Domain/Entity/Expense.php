@@ -22,9 +22,19 @@ final class Expense
         return $this->id;
     }
 
+    public function setId(?int $id): void
+    {
+        $this->id = $id;
+    }
+
     public function getUserId(): int
     {
         return $this->userId;
+    }
+
+    public function setUserId(int $userId): void
+    {
+        $this->userId = $userId;
     }
 
     public function getDate(): DateTimeImmutable
@@ -32,9 +42,22 @@ final class Expense
         return $this->date;
     }
 
+    public function setDate(DateTimeImmutable|string $date): void
+    {
+        if (is_string($date)) {
+            $date = new DateTimeImmutable($date);
+        }
+        $this->date = $date;
+    }
+
     public function getCategory(): string
     {
         return $this->category;
+    }
+
+    public function setCategory(string $category): void
+    {
+        $this->category = $category;
     }
 
     public function getAmountCents(): int
@@ -42,8 +65,18 @@ final class Expense
         return $this->amountCents;
     }
 
+    public function setAmountCents(int $amountCents): void
+    {
+        $this->amountCents = $amountCents;
+    }
+
     public function getDescription(): string
     {
         return $this->description;
+    }
+
+    public function setDescription(string $description): void
+    {
+        $this->description = $description;
     }
 }

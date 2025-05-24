@@ -85,14 +85,16 @@
         <div class="mt-1 flex justify-center">{{ total }} item(s)</div>
         <div class="mt-1 flex justify-between">
             {% if total and page > 1 %}
-                {# TODO: fill in HREF #}
-                <a href="#" class="text-blue-500 hover:text-blue-400">Previous</a>
+                <a href="/expenses?page={{ page-1 }}" class="text-blue-500 hover:text-blue-400">Previous</a>
             {% else %}
                 <span></span>
             {% endif %}
 
-            {# TODO: hide link when there is no next page available, fill in HREF #}
-            <a href="#" class="text-blue-500 hover:text-blue-400">Next</a>
+            {% if page*pageSize<total %}
+            <a href="/expenses?page={{ page+1 }}" class="text-blue-500 hover:text-blue-400">Next</a>
+            {% else %}
+                <span></span>
+            {% endif %}
         </div>
     </section>
 

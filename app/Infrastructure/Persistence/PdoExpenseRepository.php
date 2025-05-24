@@ -46,6 +46,20 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         ]);
     }
 
+    public function update(Expense $expense): void
+    {
+        $query = 'UPDATE expenses SET user_id = :user_id, date = :date, category = :category, amount_cents = :amount_cents, description = :description WHERE id = :id';
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([
+            'id' => $expense->getId(),
+            'user_id' => $expense->getUserId(),
+            'date' => $expense->getDate()->format('Y-m-d'),
+            'category' => $expense->getCategory(),
+            'amount_cents' => $expense->getAmountCents(),
+            'description' => $expense->getDescription()
+        ]);
+    }
+
     public function delete(int $id): void
     {
         $statement = $this->pdo->prepare('DELETE FROM expenses WHERE id=?');
