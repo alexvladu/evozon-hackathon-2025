@@ -16,7 +16,11 @@ class PdoUserRepository implements UserRepositoryInterface
         private readonly PDO $pdo,
     ) {}
 
+
     /**
+     * Find the user with specific id.
+     * @param mixed $id
+     * @return User|null
      * @throws Exception
      */
     public function find(mixed $id): ?User
@@ -37,14 +41,39 @@ class PdoUserRepository implements UserRepositoryInterface
         );
     }
 
+    /**
+     * Return user with specific username
+     * @param string $username
+     * @return User|null
+     * @throws Exception
+     */
     public function findByUsername(string $username): ?User
     {
-        // TODO: Implement findByUsername() method.
-        return null;
+        $query= 'SELECT * FROM users WHERE username = :username';
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute(['username' => $username]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($data === false) {
+            return null;
+        }
+
+        return new User(
+            $data['id'],
+            $data['username'],
+            $data['password_hash'],
+            new \DateTimeImmutable($data['created_at'])
+        );
     }
+
 
     public function save(User $user): void
     {
-        // TODO: Implement save() method.
+        $query = 'INSERT INTO users (username, password_hash) VALUES (:username, :password_hash)';
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute([
+            'username' => $user->getUsername(),
+            'password_hash' => $user->getPasswordHash()
+        ]);
     }
 }

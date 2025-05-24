@@ -34,7 +34,7 @@ class ExpenseController extends BaseController
         $page = (int)($request->getQueryParams()['page'] ?? 1);
         $pageSize = (int)($request->getQueryParams()['pageSize'] ?? self::PAGE_SIZE);
 
-        $expenses = $this->expenseService->list($userId, $page, $pageSize);
+        $expenses = null;//$this->expenseService->list($userId, $page, $pageSize);
 
         return $this->render($response, 'expenses/index.twig', [
             'expenses' => $expenses,

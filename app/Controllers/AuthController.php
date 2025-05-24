@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Domain\Service\AuthService;
+use App\Exceptions\ValidationException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -30,9 +31,20 @@ class AuthController extends BaseController
 
     public function register(Request $request, Response $response): Response
     {
-        // TODO: call corresponding service to perform user registration
-
-        return $response->withHeader('Location', '/login')->withStatus(302);
+        try{
+            $username = $request->getParsedBody()['username'];
+            $password = $request->getParsedBody()['password'];
+            $this->authService->register($username, $password);
+            return $response->withHeader('Location', '/login')->withStatus(302);
+        }
+        catch (ValidationException $e){
+            $errors=$e->getErrors();
+            return $this->render($response, 'auth/register.twig', ['errors'=>$errors]);
+        }
+        catch (\Exception $e){
+            $errors['general']=$e->getMessage();
+            return $this->render($response, 'auth/register.twig', ['errors'=>$errors]);
+        }
     }
 
     public function showLogin(Request $request, Response $response): Response
