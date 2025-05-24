@@ -6,6 +6,7 @@ use App\Controllers\ExpenseController;
 use Slim\App;
 use Slim\Psr7\Response;
 use Slim\Routing\RouteCollectorProxy;
+use Slim\Views\Twig;
 
 return static function (App $app) {
     $app->get('/register', [AuthController::class, 'showRegister']);
@@ -26,11 +27,16 @@ return static function (App $app) {
         });
     })
         // The middleware below ensures that only a logged-in user has access to the firewalled routes
-        ->add(function ($request, $handler) {
+        ->add(function ($request, $handler) use ($app) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
             if (!isset($_SESSION['user_id'])) {
                 return (new Response())->withHeader('Location', '/login')->withStatus(302);
             }
-
+            $twig=$app->getContainer()->get(Twig::class);
+            $twig->getEnvironment()->addGlobal('currentUserId', $_SESSION['user_id'] ?? null);
+            $twig->getEnvironment()->addGlobal('currentUserName', $_SESSION['username'] ?? null);
             return $handler->handle($request);
         });
 };

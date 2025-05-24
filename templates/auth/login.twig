@@ -18,4 +18,10 @@
             Login
         </button>
     </form>
+    {% if errors['loginError'] %}
+        <div class="text-center text-red-500 mb-4"> {{ errors['loginError'] }} </div>
+    {% endif %}
+    <p class="text-center mt-4">
+        Don't have an account? <a href="/register">Register</a>
+    </p>
 {% endblock %}

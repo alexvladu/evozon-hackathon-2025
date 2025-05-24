@@ -45,12 +45,13 @@ class AuthService
         return $user;
     }
 
-    public function attempt(string $username, string $password): bool
+    public function attempt(string $username, string $password): User
     {
-        // TODO: implement this for authenticating the user
-        // TODO: make sur ethe user exists and the password matches
-        // TODO: don't forget to store in session user data needed afterwards
-
-        return true;
+        $user=$this->users->findByUsername($username);
+        if(!$user)
+            throw new ValidationException([], 'User not found');
+        if(!password_verify($password,$user->getPasswordHash()))
+            throw new ValidationException([],'Invalid password');
+        return $user;
     }
 }

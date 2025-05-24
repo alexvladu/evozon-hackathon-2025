@@ -53,7 +53,6 @@ class PdoUserRepository implements UserRepositoryInterface
         $stmt = $this->pdo->prepare($query);
         $stmt->execute(['username' => $username]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
-
         if ($data === false) {
             return null;
         }
