@@ -2,20 +2,9 @@
 {% block title %}Expenses{% endblock %}
 {% block content %}
 
-    {# TODO: remove mock data below, pass real expenses from the controller action #}
-    {% set expenses = [
-        {'id': 1, 'description': 'Groceries', 'amount': 150.50, 'category': 'Food', 'date': '2025-05-31'},
-        {'id': 2, 'description': 'Internet Bill', 'amount': 79.99, 'category': 'Utilities', 'date': '2025-05-25'},
-        {'id': 3, 'description': 'Movie Tickets', 'amount': 30.00, 'category': 'Entertainment', 'date': '2025-05-18'},
-        {'id': 4, 'description': 'Gas', 'amount': 45.75, 'category': 'Transportation', 'date': '2025-05-10'},
-        {'id': 5, 'description': 'Gym Membership', 'amount': 50.00, 'category': 'Health', 'date': '2025-05-05'}
-    ] %}
-    {% set total = 5 %}
-
     <h1 class="text-2xl font-bold mb-4">Expenses</h1>
 
-    {# TODO: Configure the necessary href attribute #}
-    <a href=""
+    <a href="/expenses/create"
        class="inline-block mb-6 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
         Add Expense
     </a>
@@ -79,11 +68,9 @@
                     <td class="py-2 px-4">{{ expense.date|date('m/d/Y') }}</td>
                     <td class="py-2 px-4">{{ expense.category }}</td>
                     <td class="py-2 px-4">
-                        {# TODO: Configure the necessary href attribute #}
-                        <a href="#"
+                        <a href="/expenses/{{ expense.id }}/edit"
                            class="text-blue-500 hover:text-blue-400 mr-2">Edit</a>
-                        {# TODO: Configure the necessary form action #}
-                        <form action="#" method="POST" class="inline">
+                        <form action="/expenses/{{ expense.id }}/delete" method="POST" class="inline">
                             <button type="submit"
                                     class="text-red-500 hover:text-red-400">Delete
                             </button>

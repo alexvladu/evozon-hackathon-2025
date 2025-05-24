@@ -35,7 +35,15 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
 
     public function save(Expense $expense): void
     {
-        // TODO: Implement save() method.
+        $query = 'INSERT INTO expenses (user_id, date, category, amount_cents, description) VALUES (:user_id, :date, :category, :amount_cents, :description)';
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([
+            'user_id' => $expense->getUserId(),
+            'date' => $expense->getDate()->format('Y-m-d'),
+            'category' => $expense->getCategory(),
+            'amount_cents' => $expense->getAmountCents(),
+            'description' => $expense->getDescription(),
+        ]);
     }
 
     public function delete(int $id): void
@@ -44,17 +52,65 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $statement->execute([$id]);
     }
 
-    public function findBy(array $criteria, int $from, int $limit): array
+    private function executeByCritera($criteria, bool $paginate=false, int $from=0, int $limit=100000): array
     {
-        // TODO: Implement findBy() method.
-        return [];
+        $query = 'SELECT * FROM expenses';
+        $params = [];
+        $conditions = [];
+
+        foreach ($criteria as $key => $value) {
+            if ($key === 'date') {
+                $date = $value instanceof DateTimeImmutable ? $value : new DateTimeImmutable($value);
+
+                $startOfMonth = $date->modify('first day of this month')->setTime(0, 0, 0);
+                $endOfMonth = $date->modify('last day of this month')->setTime(23, 59, 59);
+
+                $conditions[] = 'date BETWEEN :start_date AND :end_date';
+                $params['start_date'] = $startOfMonth->format('Y-m-d H:i:s');
+                $params['end_date'] = $endOfMonth->format('Y-m-d H:i:s');
+            }else{
+                $conditions[] = "$key = :$key";
+                $params[$key] = $value;
+            }
+        }
+        $query .= ' WHERE ' . implode(' AND ', $conditions);
+
+        $query .= ' ORDER BY date DESC LIMIT :from, :limit';
+        $params['from'] = $from;
+        $params['limit'] = $limit;
+
+        $statement = $this->pdo->prepare($query);
+
+        // Bind parameters
+        foreach ($params as $key => $value) {
+            if ($key === 'from' || $key === 'limit') {
+                $statement->bindValue(":$key", $value, PDO::PARAM_INT);
+            } elseif ($key === 'date' && $value instanceof DateTimeImmutable) {
+                $statement->bindValue(":$key", $value->format('Y-m-d'), PDO::PARAM_STR);
+            } else {
+                $statement->bindValue(":$key", $value);
+            }
+        }
+
+        $statement->execute();
+        $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        $expenses = [];
+        foreach ($results as $row) {
+            $expenses[] = $this->createExpenseFromData($row);
+        }
+        return $expenses;
+
     }
 
+    public function findBy(array $criteria, int $from, int $limit): array
+    {
+        return $this->executeByCritera($criteria, true, $from, $limit);
+    }
 
     public function countBy(array $criteria): int
     {
-        // TODO: Implement countBy() method.
-        return 0;
+        return count($this->executeByCritera($criteria));
     }
 
     public function listExpenditureYears(User $user): array
