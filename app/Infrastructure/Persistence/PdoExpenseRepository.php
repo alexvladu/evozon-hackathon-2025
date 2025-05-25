@@ -128,28 +128,83 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         return count($this->executeByCritera($criteria));
     }
 
-    public function listExpenditureYears(User $user): array
+    public function listExpenditureYears($userId): array
     {
-        // TODO: Implement listExpenditureYears() method.
-        return [];
+        $query = 'SELECT DISTINCT strftime(\'%Y\', date) as year FROM expenses WHERE user_id = :user_id ORDER BY year DESC';
+        $statement = $this->pdo->prepare($query);
+        $statement->execute(['user_id' => $userId]);
+        return $statement->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function sumAmountsByCategory(array $criteria): array
     {
-        // TODO: Implement sumAmountsByCategory() method.
-        return [];
+        $userId = $criteria['user_id'];
+        $month = $criteria['month'];
+        $year = $criteria['year'];
+
+        $startDate = sprintf('%d-%02d-01', $year, $month);
+        $endDate = sprintf('%d-%02d-31', $year, $month);
+
+        $query = 'SELECT category, SUM(amount_cents) as total FROM expenses 
+                 WHERE user_id = :user_id 
+                 AND date BETWEEN :start_date AND :end_date
+                 GROUP BY category
+                 ORDER BY total DESC';
+
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([
+            'user_id' => $userId,
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+
+        return $statement->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     public function averageAmountsByCategory(array $criteria): array
     {
-        // TODO: Implement averageAmountsByCategory() method.
-        return [];
+        $userId = $criteria['user_id'];
+        $month = $criteria['month'];
+        $year = $criteria['year'];
+
+        $startDate = sprintf('%d-%02d-01', $year, $month);
+        $endDate = sprintf('%d-%02d-31', $year, $month);
+
+        $query = 'SELECT category, AVG(amount_cents) as average FROM expenses 
+                WHERE user_id = :user_id
+                AND date BETWEEN :start_date AND :end_date
+                GROUP BY category
+                ORDER BY average DESC';
+
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([
+            'user_id' => $userId,
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+
+        return $statement->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     public function sumAmounts(array $criteria): float
     {
-        // TODO: Implement sumAmounts() method.
-        return 0;
+        $userId = $criteria['user_id'];
+        $month = $criteria['month'];
+        $year = $criteria['year'];
+
+        $startDate = sprintf('%d-%02d-01', $year, $month);
+        $endDate = sprintf('%d-%02d-31', $year, $month);
+
+        $query = 'SELECT SUM(amount_cents) as total FROM expenses WHERE user_id = :user_id AND date BETWEEN :start_date AND :end_date';
+        $statement = $this->pdo->prepare($query);
+        $statement->execute([
+            'user_id' => $userId,
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+        return (float)($result['total'] ?? 0);
     }
 
     /**

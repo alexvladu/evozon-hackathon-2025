@@ -33,6 +33,9 @@ class ExpenseController extends BaseController
         $expenses = $this->expenseService->list($userId, $year, $month, $page, $pageSize);
         $total = $this->expenseService->countBy($userId, $year, $month);
         return $this->render($response, 'expenses/index.twig', [
+            'years' => $this->expenseService->listExpenditureYears($userId),
+            'selectedYear'  => $year,
+            'month' => $month,
             'total'    => $total,
             'expenses' => $expenses,
             'page'     => $page,

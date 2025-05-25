@@ -138,4 +138,10 @@ class ExpenseService
         $this->pdo->commit();
         return $successCount;
     }
+
+    public function listExpenditureYears($userId): array
+    {
+        return $this->expenses->listExpenditureYears($userId);
+    }
+
 }
