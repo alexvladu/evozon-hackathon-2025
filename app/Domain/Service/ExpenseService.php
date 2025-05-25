@@ -11,10 +11,12 @@ use App\Exceptions\ValidationException;
 use DateTimeImmutable;
 use DI\NotFoundException;
 use Psr\Http\Message\UploadedFileInterface;
+use PDO;
 
 class ExpenseService
 {
     public function __construct(
+        private readonly PDO $pdo,
         private readonly ExpenseRepositoryInterface $expenses,
     ) {}
 
@@ -42,14 +44,7 @@ class ExpenseService
         return $this->expenses->countBy($critera);
     }
 
-    public function create(
-        int $userId,
-        DateTimeImmutable $date,
-        string $category,
-        float $amount,
-        string $description,
-    ): void {
-
+    public function validate(DateTimeImmutable $date, string $category, float $amount, string $description): void{
         $errors=[];
         if($date>new \DateTimeImmutable('today'))
             $errors['date']='Date cannot be in the future';
@@ -65,6 +60,16 @@ class ExpenseService
         if (!empty($errors)) {
             throw new ValidationException($errors, 'Add expense failed.');
         }
+    }
+
+    public function create(
+        int $userId,
+        DateTimeImmutable $date,
+        string $category,
+        float $amount,
+        string $description,
+    ): void {
+        $this->validate($date, $category, $amount, $description);;
         $expense = new Expense(null, $userId, $date, $category, (int)$amount, $description);
         $this->expenses->save($expense);
     }
@@ -76,24 +81,7 @@ class ExpenseService
         float $amount,
         string $description
     ): void {
-        $userId=$_SESSION['user_id'];
-        if($userId!=$expense->getUserId())
-            throw new \UnexpectedValueException('You cannot update this expense');
-        $errors=[];
-        if($date>new \DateTimeImmutable('today'))
-            $errors['date']='Date cannot be in the future';
-        if($amount<0)
-            $errors['amount']='Amount cannot be negative';
-        $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
-        $categories = json_decode($categoriesString, true);
-        if(!in_array($category, $categories, true)){
-            $errors['category']='Category is invalid. Choose one of:'.implode(',',$categories);
-        }
-        if(empty($description))
-            $errors['description']='Description cannot be empty';
-        if (!empty($errors)) {
-            throw new ValidationException($errors, 'Update expense failed.');
-        }
+        $this->validate($date, $category, $amount, $description);
         $expense->setAmountCents((int)$amount);
         $expense->setDescription($description);
         $expense->setDate($date);
@@ -110,11 +98,48 @@ class ExpenseService
     }
 
 
-    public function importFromCsv(User $user, UploadedFileInterface $csvFile): int
+    public function importFromCsv(int $userId, UploadedFileInterface $csvFile): int
     {
-        // TODO: process rows in file stream, create and persist entities
-        // TODO: for extra points wrap the whole import in a transaction and rollback only in case writing to DB fails
+        $csvContent = $csvFile->getStream()->getContents();
+        $csvLines = explode("\n", $csvContent);
+        $successCount = 0;
 
-        return 0; // number of imported rows
+        echo "here??";
+        $this->pdo->beginTransaction();
+        foreach ($csvLines as $line) {
+            $line = trim($line);
+            if (empty($line)) {
+                continue;
+            }
+            $lineParts = explode(',', $line);
+            if (count($lineParts) !== 4) {
+                continue;
+            }
+            try {
+                try {
+                    $lineParts[0] = str_replace('"', '', $lineParts[0]);
+                    $lineParts[2] = str_replace('"', '', $lineParts[2]);
+                    $date = new \DateTimeImmutable($lineParts[0]);
+                    $amount = (int)trim($lineParts[1]);
+                    $description = trim($lineParts[2]);
+                    $category = trim($lineParts[3]);
+                    $this->validate($date, $category, $amount, $description);
+                    $expense = new Expense(null, $userId, $date, $category, $amount, $description);
+                }
+                catch (ValidationException $e) {
+                    echo $e->getMessage();
+                    var_dump($e->getErrors());
+                    continue;
+                }
+                $this->expenses->save($expense);
+                $successCount++;
+            } catch (\Exception $e) {
+                $this->pdo->rollBack();
+                return 0;
+            }
+        }
+        echo "?here?";
+        $this->pdo->commit();
+        return $successCount;
     }
 }

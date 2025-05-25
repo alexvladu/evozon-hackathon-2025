@@ -148,4 +148,14 @@ class ExpenseController extends BaseController
             return $response->withStatus(403);
         }
     }
+    public function import(Request $request, Response $response): Response
+    {
+        $userId=$_SESSION['user_id'];
+        $csvFile = $request->getUploadedFiles()['csv'];
+
+
+
+        $this->expenseService->importFromCsv($userId, $csvFile);
+        return $response->withStatus(200);
+    }
 }
