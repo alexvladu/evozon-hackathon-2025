@@ -4,14 +4,30 @@ declare(strict_types=1);
 
 namespace App\Domain\Service;
 
-use App\Domain\Entity\User;
 
 class AlertGenerator
 {
-    public function generate(User $user, int $year, int $month): array
-    {
-        // TODO: implement this to generate alerts for overspending by category
 
-        return [];
+    public function __construct(
+        private readonly MonthlySummaryService $monthlySummaryService,
+    ) {}
+    public function generate($userId, int $year, int $month): array
+    {
+        $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
+        $categoriesKeys = array_keys(json_decode($categoriesString, true));
+        $categories = json_decode($categoriesString, true);
+        $categoryTotals = $this->monthlySummaryService->computePerCategoryTotals($userId, $year, $month);
+        $alerts = [];
+        foreach ($categoriesKeys as $category) {
+            if(!isset($categoryTotals[$category]))
+                continue;
+            if ($categories[$category] * 100 < $categoryTotals[$category]) {
+                $alerts[$category] = [
+                    'category' => $category,
+                    'excess' => $categoryTotals[$category] - $categories[$category] * 100,
+                ];
+            }
+        }
+        return $alerts;
     }
 }

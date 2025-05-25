@@ -3,17 +3,21 @@
 {% block content %}
     <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
 
-{#    <section class="mb-8">#}
-{#        <h2 class="text-xl font-bold mb-4">Overspending Alerts</h2>#}
-{#        #}{# TODO: you have below examples for both success and failure messages #}
-{#        #}{# TODO: customize the markup below for the actual alerts #}
-{#        <div class="bg-green-900/50 border border-green-700 rounded-lg p-4 mb-4">#}
-{#            <p class="text-green-300">✅ Looking good! You're within budget for this month.</p>#}
-{#        </div>#}
-{#        <div class="bg-red-900/50 border border-red-700 rounded-lg p-4">#}
-{#            <p class="text-red-300">⚠ Groceries budget exceeded by 25.50 €</p>#}
-{#        </div>#}
-{#    </section>#}
+    <section class="mb-8">
+        {% if not alerts %}
+        <div class="bg-green-900/50 border border-green-700 rounded-lg p-4 mb-4">
+            <p class="text-green-300">✅ Looking good! You're within budget for this month.</p>
+        </div>
+        {% else %}
+            <h2 class="text-xl font-bold mb-4">Overspending Alerts</h2>
+            {% for alert in alerts %}
+                <div class="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-2">
+                    <p class="text-red-300">⚠ {{ alert.category }} budget exceeded
+                        by {{ alert.excess / 100 | number_format(2) }} €</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </section>
 
     <section>
         <h2 class="text-xl font-bold mb-4">Monthly Expenses Summary</h2>

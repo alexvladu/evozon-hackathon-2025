@@ -38,11 +38,13 @@ class DashboardController extends BaseController
                 'average'=>$averages[$category] ?? 0,
             ];
         }
+
+        $alerts=$this->alertGenerator->generate($userId, $year, $month);
         return $this->render($response, 'dashboard.twig', [
             'years' => $this->expenseService->listExpenditureYears($userId),
             'selectedYear'  => $year,
             'month' => $month,
-            'alerts'                => [],
+            'alerts'                => $alerts,
             'totalForMonth'         => $this->monthlySummaryService->computeTotal($userId, $year, $month),
             'totalsForCategories'   => $categoryTotals,
             'averagesForCategories' => $categoryAverages
