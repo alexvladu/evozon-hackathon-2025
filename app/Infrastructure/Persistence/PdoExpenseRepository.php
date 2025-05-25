@@ -80,8 +80,8 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
                 $endOfMonth = $date->modify('last day of this month')->setTime(23, 59, 59);
 
                 $conditions[] = 'date BETWEEN :start_date AND :end_date';
-                $params['start_date'] = $startOfMonth->format('Y-m-d H:i:s');
-                $params['end_date'] = $endOfMonth->format('Y-m-d H:i:s');
+                $params['start_date'] = $startOfMonth->format('Y-m-d');
+                $params['end_date'] = $endOfMonth->format('Y-m-d');
             }else{
                 $conditions[] = "$key = :$key";
                 $params[$key] = $value;
@@ -89,7 +89,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         }
         $query .= ' WHERE ' . implode(' AND ', $conditions);
 
-        $query .= ' ORDER BY date DESC LIMIT :from, :limit';
+        $query .= ' ORDER BY date DESC LIMIT :limit OFFSET :from';;
         $params['from'] = $from;
         $params['limit'] = $limit;
 
@@ -108,6 +108,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
 
         $statement->execute();
         $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
 
         $expenses = [];
         foreach ($results as $row) {

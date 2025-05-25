@@ -109,5 +109,8 @@
                 Import
             </button>
         </form>
+        {% if importCount %}
+            <p class="mt-2 text-green-500">Successfully recorded {{ importCount }} expense(s)</p>
+        {% endif %}
     </section>
 {% endblock %}

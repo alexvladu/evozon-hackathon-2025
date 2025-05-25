@@ -23,7 +23,7 @@ class ExpenseController extends BaseController
         parent::__construct($view);
     }
 
-    public function index(Request $request, Response $response): Response
+    public function index(Request $request, Response $response, mixed $data=null): Response
     {
         $userId = (int) $_SESSION['user_id'];
         $year = (int)($request->getQueryParams()['year'] ?? date('Y'));
@@ -37,13 +37,14 @@ class ExpenseController extends BaseController
             'expenses' => $expenses,
             'page'     => $page,
             'pageSize' => $pageSize,
+            'importCount' => $data['importCount'] ?? null
         ]);
     }
 
     public function create(Request $request, Response $response): Response
     {
         $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
-        $categories = json_decode($categoriesString, true);
+        $categories = array_keys(json_decode($categoriesString, true));
         return $this->render($response, 'expenses/create.twig', [
             'categories' => $categories,
             'defaultDate' => (new \DateTimeImmutable('today'))->format('Y-m-d'),
@@ -53,7 +54,7 @@ class ExpenseController extends BaseController
     public function store(Request $request, Response $response): Response
     {
         $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
-        $categories = json_decode($categoriesString, true);
+        $categories = array_keys(json_decode($categoriesString, true));
         try{
             $userId=$_SESSION['user_id'];
             $date = new \DateTimeImmutable($request->getParsedBody()['date']);
@@ -85,7 +86,7 @@ class ExpenseController extends BaseController
     public function edit(Request $request, Response $response, array $routeParams): Response
     {
         $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
-        $categories = json_decode($categoriesString, true);
+        $categories = array_keys(json_decode($categoriesString, true));
         try {
             $expenseId = (int)$routeParams['id'];
             $expense = $this->expenseService->find($expenseId);
@@ -122,14 +123,6 @@ class ExpenseController extends BaseController
         catch (NotFoundException $e){
 
         }
-        // Hints:
-        // - load the expense to be edited by its ID (use route params to get it)
-        // - check that the logged-in user is the owner of the edited expense, and fail with 403 if not
-        // - get the new values from the request and prepare for update
-        // - update the expense entity with the new values
-        // - rerender the "expenses.edit" page with included errors in case of failure
-        // - redirect to the "expenses.index" page in case of success
-
         return $response;
     }
 
@@ -152,10 +145,7 @@ class ExpenseController extends BaseController
     {
         $userId=$_SESSION['user_id'];
         $csvFile = $request->getUploadedFiles()['csv'];
-
-
-
-        $this->expenseService->importFromCsv($userId, $csvFile);
-        return $response->withStatus(200);
+        $data['importCount'] = $this->expenseService->importFromCsv($userId, $csvFile);
+        return $this->index($request, $response, $data);
     }
 }

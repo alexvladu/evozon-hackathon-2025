@@ -51,7 +51,7 @@ class ExpenseService
         if($amount<0)
             $errors['amount']='Amount cannot be negative';
         $categoriesString = $_ENV['EXPENSE_CATEGORIES'];
-        $categories = json_decode($categoriesString, true);
+        $categories = array_keys(json_decode($categoriesString, true));
         if(!in_array($category, $categories, true)){
             $errors['category']='Category is invalid. Choose one of:'.implode(',',$categories);
         }
@@ -104,7 +104,6 @@ class ExpenseService
         $csvLines = explode("\n", $csvContent);
         $successCount = 0;
 
-        echo "here??";
         $this->pdo->beginTransaction();
         foreach ($csvLines as $line) {
             $line = trim($line);
@@ -127,8 +126,6 @@ class ExpenseService
                     $expense = new Expense(null, $userId, $date, $category, $amount, $description);
                 }
                 catch (ValidationException $e) {
-                    echo $e->getMessage();
-                    var_dump($e->getErrors());
                     continue;
                 }
                 $this->expenses->save($expense);
@@ -138,7 +135,6 @@ class ExpenseService
                 return 0;
             }
         }
-        echo "?here?";
         $this->pdo->commit();
         return $successCount;
     }
